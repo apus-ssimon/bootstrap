@@ -1,18 +1,1304 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    
-    <!-- This is the main template for the site, with index.jsx building the content and behavior -->
-    
+<head>
     <title>Bootstrap Component Tool</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="https://glitch.com/favicon.ico" />
-    <script type="module" crossorigin src="/assets/index-076985e5.js"></script>
-    <link rel="stylesheet" href="/assets/index-19ccabd6.css">
-  </head>
-  <body>
-    <div id="root"></div>
     
-  </body>
-</html>
+    <!-- Bootstrap 4.3.1 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- React 18 from CDN -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    <style>
+        .preview-container {
+            background-color: #f8f9fa;
+            min-height: 200px;
+            overflow: auto;
+        }
+
+        /* Custom styles for the flip card */
+        .flip-card {
+            perspective: 1000px;
+            min-height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .flip-card-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .flip-card-front {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+
+        .flip-card-back {
+            background-color: #343a40;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-content:hover, .flip-card-content:focus {
+            transform: rotateY(180deg);
+        }
+
+        /* Custom styles for accordion */
+        .accordion .card-header {
+            cursor: pointer;
+        }
+
+        /* Custom styles for tabs */
+        .graphic-tab {
+            transition: all 0.3s;
+        }
+
+        .graphic-tab:hover, .graphic-tab.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .graphic-tab img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 10px;
+        }
+
+        /* Custom styles for carousel controls */
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+        }
+
+        .carousel-control-prev {
+            left: 15px;
+        }
+
+        .carousel-control-next {
+            right: 15px;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const { useState, useRef, useEffect } = React;
+
+        function App() {
+            const [items, setItems] = useState([
+                { id: 1, imageUrl: "", title: "", description: "", useVideo: false, videoUrl: "" },
+            ]);
+            const [selectedElement, setSelectedElement] = useState("accordion");
+            const [previewCode, setPreviewCode] = useState("");
+            const [styleCode, setStyleCode] = useState("");
+            const [hasCustomCSS, setHasCustomCSS] = useState(false);
+            const codeRef = useRef(null);
+            const styleCodeRef = useRef(null);
+            const [codeGenerated, setCodeGenerated] = useState(false);
+
+            // Helper function to convert relative image paths to absolute for preview
+            const getFullImageUrl = (url) => {
+                if (
+                    url &&
+                    typeof url === "string" &&
+                    url.trim() !== "" &&
+                    !url.startsWith("http")
+                ) {
+                    return `https://myclassroom.apus.edu${url}`;
+                }
+                return url;
+            };
+
+            // Add a new item
+            const addItem = () => {
+                const newItem = {
+                    id: items.length + 1,
+                    imageUrl: "",
+                    title: "",
+                    description: "",
+                    useVideo: false,
+                    videoUrl: ""
+                };
+                setItems([...items, newItem]);
+            };
+
+            // Delete an item
+            const deleteItem = (id) => {
+                if (items.length > 1) {
+                    const updatedItems = items.filter((item) => item.id !== id);
+                    const renumberedItems = updatedItems.map((item, index) => ({
+                        ...item,
+                        id: index + 1,
+                    }));
+                    setItems(renumberedItems);
+                } else {
+                    alert("You must have at least one item.");
+                }
+            };
+
+            // Handle input changes
+            const handleChange = (id, field, value) => {
+                const updatedItems = items.map((item) => {
+                    if (item.id === id) {
+                        return { ...item, [field]: value };
+                    }
+                    return item;
+                });
+                setItems(updatedItems);
+            };
+
+            // Handle checkbox changes
+            const handleCheckboxChange = (id, field, checked) => {
+                const updatedItems = items.map((item) => {
+                    if (item.id === id) {
+                        return { ...item, [field]: checked };
+                    }
+                    return item;
+                });
+                setItems(updatedItems);
+            };
+
+            // Generate accordion code
+            const generateAccordionCode = () => {
+                let accordionItems = "";
+
+                items.forEach((item, index) => {
+                    accordionItems += `
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">
+            ${item.title || `Accordion ${index + 1} of ${items.length}`}
+        </h2>
+    </div>
+    <div class="collapse">
+        <div class="card-body">
+            <p>${item.description ||
+                        `Insert Accordion ${index + 1} of ${items.length} content here.`
+                        }</p>
+        </div>
+    </div>
+</div>`;
+                });
+
+                return `<p class="instruction">Select each item to learn more.</p>
+<button type="button" class="btn btn-secondary expandall" aria-expanded="false">Open All Panels</button>
+<div class="accordion">
+    ${accordionItems}
+</div>`;
+            };
+
+            // Generate accordion code for preview
+            const generateAccordionPreviewCode = () => {
+                return generateAccordionCode();
+            };
+
+            // Generate flip card code
+            const generateFlipCardCode = () => {
+                let flipCards = "";
+
+                items.forEach((item, index) => {
+                    const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
+                    const hasVideo = item.useVideo && item.videoUrl && item.videoUrl.trim() !== "";
+
+                    let frontSideContent = "";
+
+                    if (hasVideo) {
+                        frontSideContent = `
+            <div class="flip-card-front has-video">
+              <div class="flip-card-video-container">
+                <video autoplay muted loop playsinline>
+                  <source src="${item.videoUrl}" type="video/mp4">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div class="flip-card-front-body">
+                <h4>${item.title || "Flip Card Front"}</h4>
+              </div>
+            </div>`;
+                    } else {
+                        frontSideContent = `
+            <div class="flip-card-front ${hasImage ? "has-image" : ""}" ${hasImage
+                                ? `style="background: url('${item.imageUrl}') center/cover no-repeat; padding:0;"`
+                                : ""
+                            }>
+              <div class="flip-card-front-body">
+                <h4>${item.title || "Flip Card Front"}</h4>
+              </div>
+            </div>`;
+                    }
+
+                    flipCards += `
+      <div class="col-md-${items.length === 1
+                            ? "12"
+                            : items.length === 2
+                                ? "6"
+                                : items.length === 3
+                                    ? "4"
+                                    : "3"
+                        } mb-4">
+        <div class="flip-card">
+          <div class="flip-card-content" tabindex="0" role="button" onclick="this.classList.toggle('flipped')">
+            ${frontSideContent}
+            <div class="flip-card-back">
+              <h4>${item.title || "Flip Card Back"}</h4>
+              <div class="flip-card-description">
+                <p>${item.description || "Add content here."}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+                });
+
+                return `<div class="container">
+        <div class="row">
+      ${flipCards}
+        </div>
+      </div>`;
+            };
+
+            // Change generateFlipCardPreviewCode() to use full URLs
+            const generateFlipCardPreviewCode = () => {
+                let flipCards = "";
+
+                items.forEach((item, index) => {
+                    const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
+                    const hasVideo = item.useVideo && item.videoUrl && item.videoUrl.trim() !== "";
+
+                    const fullImageUrl = getFullImageUrl(item.imageUrl);
+                    const fullVideoUrl = getFullImageUrl(item.videoUrl);
+
+                    let frontSideContent = "";
+
+                    if (hasVideo) {
+                        frontSideContent = `
+            <div class="flip-card-front has-video">
+              <div class="flip-card-video-container">
+                <video autoplay muted loop playsinline>
+                  <source src="${fullVideoUrl}" type="video/mp4">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div class="flip-card-front-body">
+                <h4>${item.title || "Flip Card Front"}</h4>
+              </div>
+            </div>`;
+                    } else {
+                        frontSideContent = `
+            <div class="flip-card-front ${hasImage ? "has-image" : ""}" ${hasImage
+                                ? `style="background: url('${fullImageUrl}') center/cover no-repeat;"`
+                                : ""
+                            }>
+              <div class="flip-card-front-body">
+                <h4>${item.title || "Flip Card Front"}</h4>
+              </div>
+            </div>`;
+                    }
+
+                    flipCards += `
+      <div class="col-md-${items.length === 1
+                            ? "12"
+                            : items.length === 2
+                                ? "6"
+                                : items.length === 3
+                                    ? "4"
+                                    : "3"
+                        } mb-4">
+        <div class="flip-card">
+          <div class="flip-card-content" tabindex="0" role="button" onclick="this.classList.toggle('flipped')">
+            ${frontSideContent}
+            <div class="flip-card-back">
+              <h4>${item.title || "Flip Card Back"}</h4>
+              <div class="flip-card-description">
+                <p>${item.description || "Add content here."}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+                });
+
+                return `<div class="container">
+        <div class="row">
+      ${flipCards}
+        </div>
+      </div>`;
+            };
+
+            // Generate flip card CSS
+            const generateFlipCardCSS = () => {
+                return `<style>
+          /* Flip Card Custom Styles */
+          .flip-card {
+              perspective: 1000px;
+              min-height: 300px;
+              margin-bottom: 20px;
+          }
+      
+          .flip-card-content {
+              position: relative;
+              width: 100%;
+              height: 100%;
+              min-height: 300px;
+              transition: transform 0.6s;
+              transform-style: preserve-3d;
+              cursor: pointer;
+          }
+      
+          .flip-card-front,
+          .flip-card-back {
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              backface-visibility: hidden;
+              display: flex;
+              flex-direction: column;
+              padding: 0;
+          }
+      
+          .flip-card-front {
+              background-color: #f8f9fa;
+              border: 1px solid #c4c6c7;
+              border-radius: 5px;
+              color: #333;
+              background: none;
+              overflow-y: hidden;
+              padding: 0;
+          }
+      
+          .flip-card-front h4 {
+              padding: 0.5rem;
+          }
+      
+          .flip-card-front.has-image {
+              color: white;
+              padding: 0;
+              justify-content: end;
+          }
+      
+          .flip-card-front.has-video {
+              color: white;
+              padding: 0;
+              justify-content: end;
+          }
+      
+          .flip-card-front.has-image h4,
+          .flip-card-front.has-image h4:first-child,
+          .flip-card-front.has-video h4,
+          .flip-card-front.has-video h4:first-child {
+              color: white !important;
+          }
+      
+          .flip-card-front-body {
+              margin-top: 60%;
+              padding: 0;
+              position: relative;
+              width: 100%;
+              text-align: center;
+          }
+      
+          .flip-card-front.has-image .flip-card-front-body,
+          .flip-card-front.has-video .flip-card-front-body {
+              background: linear-gradient(0deg, rgba(0, 0, 0, 0.8), transparent);
+          }
+      
+          .flip-card-video-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              z-index: -1;
+              overflow: hidden;
+          }
+      
+          .flip-card-video-container video {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+          }
+      
+          .flip-card-back {
+              background-color: #343a40;
+              color: white;
+              transform: rotateY(180deg);
+              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              padding: 5px;
+          }
+
+          .flip-card-back h4{
+              color: white !important;
+          }
+      
+          .flip-card-description {
+              flex: 1;
+              overflow-y: auto;
+              padding-right: 5px;
+          }
+      
+          .flip-card-content:hover,
+          .flip-card-content:focus,
+          .flip-card-content.flipped {
+              transform: rotateY(180deg);
+          }
+      
+          /* For touch devices */
+          @media (hover: none) {
+              .flip-card-content:hover {
+                  transform: none;
+              }
+      
+              .flip-card-content.flipped {
+                  transform: rotateY(180deg);
+              }
+          }
+      </style>`;
+            };
+
+            // Generate regular card code
+            const generateRegularCardCode = () => {
+                let cards = "";
+                let modals = "";
+
+                items.forEach((item, index) => {
+                    const modalId = `Modal${index + 1}`;
+
+                    cards += `
+  <!--Card/Modal ${index + 1}-->
+  <div class="col-md-${items.length === 1
+                            ? "12"
+                            : items.length === 2
+                                ? "6"
+                                : items.length === 3
+                                    ? "4"
+                                    : "3"
+                        } mb-4">
+      <div class="card card-interact h-100">
+          <img class="card-img-top"
+              src="${item.imageUrl ||
+                        "/shared/LCS_HTML_Templates/apus_Template_2020/_assets/img/375x200.png"
+                        }"
+              alt="Card image cap">
+          <div class="card-body">
+              <h5 class="card-title">${item.title || "Card title"}</h5>
+              <button type="button" class="btn btn-primary btn-breakout" data-toggle="modal" data-target="#${modalId}">
+                  Learn More
+              </button>
+          </div>
+      </div>
+  </div>`;
+
+                    modals += `
+  <div class="modal fade" id="${modalId}" tabindex="-1" role="dialog" aria-labelledby="${modalId}Label"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-top" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="${modalId}Label">${item.title || "Modal title"
+                        }</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">×</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <p>${item.description || "Add description here."}</p>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+          </div>
+      </div>
+  </div>
+  <!--End Card/Modal ${index + 1}-->`;
+                });
+
+                return `<div class="container">
+      <div class="row">
+          ${cards}
+      </div>
+      ${modals}
+  </div>`;
+            };
+
+            // Add CSS for regular cards
+            const generateRegularCardCSS = () => {
+                return `<style>
+/* Regular Card Custom Styles */
+.card-interact:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+.card-interact {
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.modal-top {
+  margin-top: 50px;
+}
+</style>`;
+            };
+
+            const generateRegularCardPreviewCode = () => {
+                let cards = "";
+                let modals = "";
+
+                items.forEach((item, index) => {
+                    const modalId = `Modal${index + 1}`;
+                    const fullImageUrl = getFullImageUrl(
+                        item.imageUrl ||
+                        "/shared/LCS_HTML_Templates/apus_Template_2020/_assets/img/375x200.png"
+                    );
+
+                    cards += `
+  <!--Card/Modal ${index + 1}-->
+  <div class="col-md-${items.length === 1
+                            ? "12"
+                            : items.length === 2
+                                ? "6"
+                                : items.length === 3
+                                    ? "4"
+                                    : "3"
+                        } mb-4">
+      <div class="card card-interact h-100">
+          <img class="card-img-top" src="${fullImageUrl}" alt="Card image cap">
+          <div class="card-body">
+              <h5 class="card-title">${item.title || "Card title"}</h5>
+              <button type="button" class="btn btn-primary btn-breakout" data-toggle="modal" data-target="#${modalId}">
+                  Learn More
+              </button>
+          </div>
+      </div>
+  </div>`;
+
+                    modals += `
+  <div class="modal fade" id="${modalId}" tabindex="-1" role="dialog" aria-labelledby="${modalId}Label"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-top" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="${modalId}Label">${item.title || "Modal title"
+                        }</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">×</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <p>${item.description || "Add description here."}</p>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+          </div>
+      </div>
+  </div>
+  <!--End Card/Modal ${index + 1}-->`;
+                });
+
+                return `<div class="container">
+      <div class="row">
+          ${cards}
+      </div>
+      ${modals}
+  </div>`;
+            };
+
+            const generateTabsCode = () => {
+                let tabButtons = "";
+                let tabPanes = "";
+
+                items.forEach((item, index) => {
+                    const isActive = index === 0 ? "active" : "";
+                    const fadeShow = index === 0 ? "show active" : "";
+
+                    tabButtons += `
+  <a class="list-group-item-action graphic-tab list-group-item ${isActive}" data-toggle="list" role="tab">
+      <span class="bg-img-wrapper">
+          <img src="${item.imageUrl ||
+                        "/shared/LCS_HTML_Templates/apus_Template_2020/_assets/img/300x300.png"
+                        }" alt="">
+      </span>
+      <br>
+      ${item.title || `Graphic Tab ${index + 1}`}
+  </a>`;
+
+                    tabPanes += `
+  <div class="tab-pane fade ${fadeShow}" role="tabpanel" tabindex="0">
+      <p>
+          ${item.description || `Graphic Tab ${index + 1} content.`}
+      </p>
+  </div>`;
+                });
+
+                return `<p class="instruction">Select each tab to learn more.</p>
+  <div class="graphic-tabs">
+      <div class="row">
+          <div class="col-sm-12">
+              <div class="list-group flex-md-row text-center" role="tablist">
+                  ${tabButtons}
+              </div>
+          </div>
+          <div class="col-sm-12">
+              <div class="tab-content content-graphic-tabs">
+                  ${tabPanes}
+              </div>
+          </div>
+      </div>
+  </div>`;
+            };
+
+            // Generate tabs code for preview
+            const generateTabsPreviewCode = () => {
+                let tabButtons = "";
+                let tabPanes = "";
+
+                items.forEach((item, index) => {
+                    const isActive = index === 0 ? "active" : "";
+                    const fadeShow = index === 0 ? "show active" : "";
+                    const fullImageUrl = getFullImageUrl(
+                        item.imageUrl ||
+                        "/shared/LCS_HTML_Templates/apus_Template_2020/_assets/img/300x300.png"
+                    );
+
+                    tabButtons += `
+  <a class="list-group-item-action graphic-tab list-group-item ${isActive}" data-toggle="list" role="tab">
+      <span class="bg-img-wrapper">
+          <img src="${fullImageUrl}" alt="">
+      </span>
+      <br>
+      ${item.title || `Graphic Tab ${index + 1}`}
+  </a>`;
+
+                    tabPanes += `
+  <div class="tab-pane fade ${fadeShow}" role="tabpanel" tabindex="0">
+      <p>
+          ${item.description || `Graphic Tab ${index + 1} content.`}
+      </p>
+  </div>`;
+                });
+
+                return `<p class="instruction">Select each tab to learn more.</p>
+  <div class="graphic-tabs">
+      <div class="row">
+          <div class="col-sm-12">
+              <div class="list-group flex-md-row text-center" role="tablist">
+                  ${tabButtons}
+              </div>
+          </div>
+          <div class="col-sm-12">
+              <div class="tab-content content-graphic-tabs">
+                  ${tabPanes}
+              </div>
+          </div>
+      </div>
+  </div>`;
+            };
+
+            // Generate tabs CSS
+            const generateTabsCSS = () => {
+                return `<style>
+    /* Tabs Custom Styles */
+    .graphic-tab {
+        transition: all 0.3s;
+    }
+
+    .graphic-tab:hover,
+    .graphic-tab.active {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .graphic-tab img {
+        max-width: 100px;
+        max-height: 100px;
+        margin-bottom: 10px;
+    }
+</style>`;
+            };
+
+            // Generate carousel code
+            const generateCarouselCode = () => {
+                let carouselItems = "";
+
+                items.forEach((item, index) => {
+                    const isActive = index === 0 ? "active" : "";
+
+                    if (item.useVideo && item.videoUrl && item.videoUrl.trim() !== "") {
+                        carouselItems += `
+  <div class="carousel-item ${isActive}">
+      <div class="carousel-video-container">
+          <video class="d-block w-100" autoplay muted loop playsinline>
+              <source src="${item.videoUrl}" type="video/mp4">
+              Your browser does not support the video tag.
+          </video>
+      </div>
+      <div class="carousel-content">
+          <h4 class="carousel-title"><strong>${item.title || `Slide ${index + 1}`
+                            }</strong></h4>
+          <p class="carousel-description">${item.description || ""}</p>
+      </div>
+  </div>`;
+                    } else {
+                        carouselItems += `
+  <div class="carousel-item ${isActive}">
+      <div class="carousel-image-container">
+          <img src="${item.imageUrl || "assets/carousel/1.png"}" alt="${item.title || `Slide ${index + 1}`
+                            }">
+      </div>
+      <div class="carousel-content">
+          <h4 class="carousel-title"><strong>${item.title || `Slide ${index + 1}`
+                            }</strong></h4>
+          <p class="carousel-description">${item.description || ""}</p>
+      </div>
+  </div>`;
+                    }
+                });
+
+                return `<div class="carousel slide" id="carousel" data-interval="false" aria-live="polite">
+      <div class="carousel-inner">
+          ${carouselItems}
+      </div>
+      <a class="carousel-control-prev" href="#carousel" role="button" data-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="sr-only">Previous</span>
+      </a>
+      <a class="carousel-control-next" href="#carousel" role="button" data-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="sr-only">Next</span>
+      </a>
+  </div>`;
+            };
+
+            // Generate carousel CSS
+            const generateCarouselCSS = () => {
+                return `<style>
+    /* Carousel Custom Styles */
+    #carousel .carousel-item {
+        text-align: center;
+    }
+
+    #carousel .carousel-image-container,
+    #carousel .carousel-video-container {
+        width: 100%;
+        height: 300px;
+        overflow: hidden;
+    }
+
+    #carousel .carousel-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    #carousel .carousel-video-container video {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+    }
+
+    #carousel .carousel-content {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #carousel .carousel-title {
+        margin-bottom: 10px;
+    }
+
+    #carousel .carousel-description {
+        color: #6c757d;
+    }
+
+    /* Navigation controls */
+    #carousel .carousel-control-prev,
+    #carousel .carousel-control-next {
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        top: 30%;
+        transform: translateY(-50%);
+        opacity: 0.8;
+    }
+
+    #carousel .carousel-control-prev {
+        left: 15px;
+    }
+
+    #carousel .carousel-control-next {
+        right: 15px;
+    }
+
+    #carousel .carousel-control-prev:hover,
+    #carousel .carousel-control-next:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    #carousel .carousel-control-prev-icon,
+    #carousel .carousel-control-next-icon {
+        width: 24px;
+        height: 24px;
+    }
+</style>`;
+            };
+
+            const generateCode = () => {
+                let code = "";
+                let css = "";
+                let previewCode = "";
+
+                switch (selectedElement) {
+                    case "accordion":
+                        code = generateAccordionCode();
+                        previewCode = generateAccordionPreviewCode();
+                        break;
+                    case "flipCard":
+                        css = generateFlipCardCSS();
+                        code = generateFlipCardCode();
+                        previewCode = generateFlipCardPreviewCode();
+                        break;
+                    case "regularCard":
+                        css = generateRegularCardCSS();
+                        code = generateRegularCardCode();
+                        previewCode = generateRegularCardPreviewCode();
+                        break;
+                    case "tabs":
+                        css = generateTabsCSS();
+                        code = generateTabsCode();
+                        previewCode = generateTabsPreviewCode();
+                        break;
+                    case "carousel":
+                        css = generateCarouselCSS();
+                        code = generateCarouselCode();
+                        previewCode = generateCarouselPreviewCode();
+                        break;
+                    default:
+                        code = "Select an element type";
+                        previewCode = code;
+                }
+
+                setHasCustomCSS(css !== "");
+                setStyleCode(css);
+
+                const fullPreviewCode = css ? css + previewCode : previewCode;
+                setPreviewCode(fullPreviewCode);
+
+                setCodeGenerated(true);
+
+                return css ? css + code : code;
+            };
+
+            // Copy code to clipboard
+            const copyCode = () => {
+                let code = "";
+                let css = "";
+
+                switch (selectedElement) {
+                    case "accordion":
+                        code = generateAccordionCode();
+                        break;
+                    case "flipCard":
+                        css = generateFlipCardCSS();
+                        code = generateFlipCardCode();
+                        break;
+                    case "regularCard":
+                        css = generateRegularCardCSS();
+                        code = generateRegularCardCode();
+                        break;
+                    case "tabs":
+                        css = generateTabsCSS();
+                        code = generateTabsCode();
+                        break;
+                    case "carousel":
+                        css = generateCarouselCSS();
+                        code = generateCarouselCode();
+                        break;
+                    default:
+                        code = "Select an element type";
+                }
+
+                const codeToCopy = hasCustomCSS
+                    ? code.substring(code.indexOf('<div class="'))
+                    : code;
+
+                navigator.clipboard
+                    .writeText(codeToCopy)
+                    .then(() => {
+                        alert("Code copied to clipboard!");
+                    })
+                    .catch((err) => {
+                        console.error("Failed to copy code: ", err);
+                    });
+            };
+
+            // Copy style code to clipboard
+            const copyStyleCode = () => {
+                navigator.clipboard
+                    .writeText(styleCode)
+                    .then(() => {
+                        alert("Style code copied to clipboard!");
+                    })
+                    .catch((err) => {
+                        console.error("Failed to copy style code: ", err);
+                    });
+            };
+
+            // Helper to get direct URL code for textarea display
+            const getCodeForDisplay = () => {
+                let code = "";
+
+                switch (selectedElement) {
+                    case "accordion":
+                        code = generateAccordionCode();
+                        break;
+                    case "flipCard":
+                        code = generateFlipCardCode();
+                        break;
+                    case "regularCard":
+                        code = generateRegularCardCode();
+                        break;
+                    case "tabs":
+                        code = generateTabsCode();
+                        break;
+                    case "carousel":
+                        code = generateCarouselCode();
+                        break;
+                    default:
+                        code = "Select an element type";
+                }
+
+                return hasCustomCSS && code.indexOf('<div class="') >= 0
+                    ? code.substring(code.indexOf('<div class="'))
+                    : code;
+            };
+
+            // Render additional fields based on element type
+            const renderElementSpecificFields = (item) => {
+                if (selectedElement === "carousel" || selectedElement === "flipCard") {
+                    return React.createElement("div", { className: "form-group" }, [
+                        React.createElement("div", { className: "form-check mb-3", key: "checkbox" }, [
+                            React.createElement("input", {
+                                type: "checkbox",
+                                className: "form-check-input",
+                                id: `useVideo-${item.id}`,
+                                checked: item.useVideo || false,
+                                onChange: (e) =>
+                                    handleCheckboxChange(item.id, "useVideo", e.target.checked),
+                                key: "input"
+                            }),
+                            React.createElement("label", {
+                                className: "form-check-label",
+                                htmlFor: `useVideo-${item.id}`,
+                                key: "label"
+                            }, "Use video instead of image")
+                        ]),
+
+                        item.useVideo && React.createElement("div", { className: "form-group", key: "video-group" }, [
+                            React.createElement("label", {
+                                htmlFor: `videoUrl-${item.id}`,
+                                key: "video-label"
+                            }, "Video URL:"),
+                            React.createElement("small", {
+                                className: "form-text text-muted d-block mb-2",
+                                key: "video-help"
+                            }, "Add your MP4 video to Brightspace and paste the URL here"),
+                            React.createElement("input", {
+                                type: "text",
+                                id: `videoUrl-${item.id}`,
+                                className: "form-control",
+                                value: item.videoUrl || "",
+                                onChange: (e) =>
+                                    handleChange(item.id, "videoUrl", e.target.value),
+                                placeholder: "Enter video URL (.mp4)",
+                                key: "video-input"
+                            })
+                        ])
+                    ]);
+                }
+                return null;
+            };
+
+            return React.createElement("div", { className: "container mt-4" }, [
+                React.createElement("h1", { className: "mb-4", key: "title" }, "Bootstrap Element Generator"),
+
+                // Element Type Selector
+                React.createElement("div", { className: "form-group", key: "selector" }, [
+                    React.createElement("label", { htmlFor: "elementType", key: "selector-label" }, 
+                        React.createElement("strong", {}, "Choose Bootstrap Element Type:")
+                    ),
+                    React.createElement("select", {
+                        id: "elementType",
+                        className: "form-control",
+                        value: selectedElement,
+                        onChange: (e) => setSelectedElement(e.target.value),
+                        key: "selector-select"
+                    }, [
+                        React.createElement("option", { value: "accordion", key: "acc" }, "Accordion"),
+                        React.createElement("option", { value: "flipCard", key: "flip" }, "Flip Card"),
+                        React.createElement("option", { value: "regularCard", key: "reg" }, "Regular Card"),
+                        React.createElement("option", { value: "tabs", key: "tabs" }, "Tabs"),
+                        React.createElement("option", { value: "carousel", key: "car" }, "Carousel")
+                    ])
+                ]),
+
+                // Content Items
+                React.createElement("h3", { className: "mt-4", key: "items-title" }, "Content Items"),
+                
+                ...items.map((item) =>
+                    React.createElement("div", { key: item.id, className: "card mb-3 p-3" }, [
+                        React.createElement("div", { className: "d-flex justify-content-between", key: "header" }, [
+                            React.createElement("h4", { key: "item-title" }, `Item ${item.id}`),
+                            React.createElement("button", {
+                                className: "btn btn-danger btn-sm",
+                                onClick: () => deleteItem(item.id),
+                                title: "Delete this item",
+                                type: "button",
+                                key: "delete-btn"
+                            }, "Delete")
+                        ]),
+                        React.createElement("div", { className: "form-group", key: "image-group" }, [
+                            React.createElement("label", {
+                                htmlFor: `imageUrl-${item.id}`,
+                                key: "image-label"
+                            }, item.useVideo ? "Fallback Image URL:" : "Image URL:"),
+                            React.createElement("small", {
+                                className: "form-text text-muted d-block mb-2",
+                                key: "image-help"
+                            }, item.useVideo 
+                                ? "Add a fallback image in case video doesn't load" 
+                                : "Add your image to Brightspace and paste the URL here"),
+                            React.createElement("input", {
+                                type: "text",
+                                id: `imageUrl-${item.id}`,
+                                className: "form-control",
+                                value: item.imageUrl,
+                                onChange: (e) =>
+                                    handleChange(item.id, "imageUrl", e.target.value),
+                                placeholder: "Enter image URL",
+                                key: "image-input"
+                            })
+                        ]),
+                        
+                        renderElementSpecificFields(item),
+                        
+                        React.createElement("div", { className: "form-group", key: "title-group" }, [
+                            React.createElement("label", {
+                                htmlFor: `title-${item.id}`,
+                                key: "title-label"
+                            }, "Title:"),
+                            React.createElement("input", {
+                                type: "text",
+                                id: `title-${item.id}`,
+                                className: "form-control",
+                                value: item.title,
+                                onChange: (e) => handleChange(item.id, "title", e.target.value),
+                                placeholder: "Enter title",
+                                key: "title-input"
+                            })
+                        ]),
+                        React.createElement("div", { className: "form-group", key: "desc-group" }, [
+                            React.createElement("label", {
+                                htmlFor: `description-${item.id}`,
+                                key: "desc-label"
+                            }, "Description:"),
+                            React.createElement("textarea", {
+                                id: `description-${item.id}`,
+                                className: "form-control",
+                                value: item.description,
+                                onChange: (e) =>
+                                    handleChange(item.id, "description", e.target.value),
+                                placeholder: "Enter description",
+                                rows: "3",
+                                key: "desc-input"
+                            })
+                        ])
+                    ])
+                ),
+
+                React.createElement("button", {
+                    className: "btn btn-primary mb-4",
+                    onClick: addItem,
+                    type: "button",
+                    key: "add-btn"
+                }, "Add More Items"),
+
+                // Code Generation and Preview
+                React.createElement("div", { className: "mt-4", key: "code-section" }, [
+                    React.createElement("h3", { key: "code-title" }, "Generated Code"),
+                    React.createElement("div", { className: "d-flex justify-content-between mb-2", key: "code-buttons" }, [
+                        React.createElement("button", {
+                            className: "btn btn-success",
+                            onClick: generateCode,
+                            type: "button",
+                            key: "generate-btn"
+                        }, "Generate Code"),
+                        codeGenerated && React.createElement("button", {
+                            className: "btn btn-info",
+                            onClick: copyCode,
+                            type: "button",
+                            key: "copy-btn"
+                        }, "Copy Code")
+                    ]),
+                    
+                    codeGenerated && React.createElement("div", { className: "form-group", key: "code-textarea" },
+                        React.createElement("textarea", {
+                            ref: codeRef,
+                            className: "form-control",
+                            rows: "10",
+                            value: getCodeForDisplay(),
+                            readOnly: true
+                        })
+                    ),
+
+                    // Style Code Section
+                    codeGenerated && hasCustomCSS && styleCode && React.createElement("div", { className: "mt-4", key: "style-section" }, [
+                        React.createElement("h3", { key: "style-title" }, "Style Code"),
+                        React.createElement("p", { className: "text-muted", key: "style-desc" },
+                            "Copy this style code and paste it in the HTML editor of your page. This contains the required styling for this component."
+                        ),
+                        React.createElement("div", { className: "d-flex justify-content-end mb-2", key: "style-button" },
+                            React.createElement("button", {
+                                className: "btn btn-info",
+                                onClick: copyStyleCode,
+                                type: "button"
+                            }, "Copy Style Code")
+                        ),
+                        React.createElement("div", { className: "form-group", key: "style-textarea" },
+                            React.createElement("textarea", {
+                                ref: styleCodeRef,
+                                className: "form-control",
+                                rows: "6",
+                                value: styleCode,
+                                readOnly: true
+                            })
+                        )
+                    ])
+                ]),
+
+                // Preview Section
+                codeGenerated && previewCode && React.createElement("div", { className: "mt-4", key: "preview-section" }, [
+                    React.createElement("h3", { key: "preview-title" }, "Preview"),
+                    React.createElement("div", { className: "alert alert-warning mb-3", key: "preview-warning" }, [
+                        React.createElement("strong", {}, "Note:"),
+                        " Images and videos in the preview will only display correctly when logged into Brightspace."
+                    ]),
+                    React.createElement("div", { className: "card p-3", key: "preview-card" },
+                        React.createElement("div", {
+                            className: "preview-container border p-3",
+                            dangerouslySetInnerHTML: { __html: previewCode }
+                        })
+                    )
+                ])
+            ]);
+        }
+
+        // Render the app
+        ReactDOM.render(React.createElement(App), document.getElementById("root"));
+    </script>
+</body>
+</html>-icon" aria-hidden="true"></span>
+          <span class="sr-only">Previous</span>
+      </a>
+      <a class="carousel-control-next" href="#carousel" role="button" data-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="sr-only">Next</span>
+      </a>
+  </div>`;
+            };
+
+            // Generate carousel code for preview
+            const generateCarouselPreviewCode = () => {
+                let carouselItems = "";
+
+                items.forEach((item, index) => {
+                    const isActive = index === 0 ? "active" : "";
+
+                    if (item.useVideo && item.videoUrl && item.videoUrl.trim() !== "") {
+                        const fullVideoUrl = getFullImageUrl(item.videoUrl);
+
+                        carouselItems += `
+  <div class="carousel-item ${isActive}">
+      <div class="carousel-video-container">
+          <video class="d-block w-100" autoplay muted loop playsinline>
+              <source src="${fullVideoUrl}" type="video/mp4">
+              Your browser does not support the video tag.
+          </video>
+      </div>
+      <div class="carousel-content">
+          <h4 class="carousel-title"><strong>${item.title || `Slide ${index + 1}`
+                            }</strong></h4>
+          <p class="carousel-description">${item.description || ""}</p>
+      </div>
+  </div>`;
+                    } else {
+                        const fullImageUrl = getFullImageUrl(item.imageUrl || "assets/carousel/1.png");
+
+                        carouselItems += `
+  <div class="carousel-item ${isActive}">
+      <div class="carousel-image-container">
+          <img src="${fullImageUrl}" alt="${item.title || `Slide ${index + 1}`}">
+      </div>
+      <div class="carousel-content">
+          <h4 class="carousel-title"><strong>${item.title || `Slide ${index + 1}`
+                            }</strong></h4>
+          <p class="carousel-description">${item.description || ""}</p>
+      </div>
+  </div>`;
+                    }
+                });
+
+                return `<div class="carousel slide" id="carousel" data-interval="false" aria-live="polite">
+      <div class="carousel-inner">
+          ${carouselItems}
+      </div>
+      <a class="carousel-control-prev" href="#carousel" role="button" data-slide="prev">
+          <span class="carousel-control-prev
