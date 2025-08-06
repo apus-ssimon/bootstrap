@@ -1155,7 +1155,7 @@ const generateFlashcardCode = () => {
                     </div>` : ''}
                     <div class="flashcard-content">
                         <h4>${item.title || `Flashcard ${index + 1}`}</h4>
-                        <p class="flashcard-hint">Click to reveal answer</p>
+                        <p class="flashcard-hint">Hover to reveal answer</p>
                     </div>
                 </div>
                 <div class="flashcard-back">
@@ -1249,7 +1249,6 @@ const generateFlashcardPreviewCode = () => {
 </div>`;
 };
 
-// Generate flashcard CSS
 const generateFlashcardCSS = () => {
     return `<style>
 /* Flashcard Custom Styles */
@@ -1272,7 +1271,6 @@ const generateFlashcardCSS = () => {
     max-width: 400px;
     height: 350px;
     perspective: 1000px;
-    cursor: pointer;
 }
 
 .flashcard-inner {
@@ -1283,7 +1281,7 @@ const generateFlashcardCSS = () => {
     transform-style: preserve-3d;
 }
 
-.flashcard.flipped .flashcard-inner {
+.flashcard:hover .flashcard-inner {
     transform: rotateY(180deg);
 }
 
@@ -1301,7 +1299,7 @@ const generateFlashcardCSS = () => {
 }
 
 .flashcard-front {
-    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     color: white;
 }
 
@@ -1332,10 +1330,17 @@ const generateFlashcardCSS = () => {
     background: rgba(0, 0, 0, 0.3);
 }
 
+.flashcard-front .flashcard-content h4 {
+    color: white !important;
+}
+
+.flashcard-back .flashcard-content h4 {
+    color: black !important;
+}
+
 .flashcard-content h4 {
     margin-bottom: 10px;
     font-weight: 600;
-    color: white !important;
 }
 
 .flashcard-hint {
@@ -1404,10 +1409,6 @@ const generateFlashcardCSS = () => {
     font-weight: 500;
 }
 
-#flashcardCarousel .carousel-item {
-    transition: transform 0.6s ease-in-out;
-}
-
 @media (max-width: 768px) {
     .flashcard-carousel {
         max-width: 100%;
@@ -1423,47 +1424,7 @@ const generateFlashcardCSS = () => {
         padding: 15px;
     }
 }
-
-.flashcard:hover .flashcard-inner {
-    transform: rotateY(5deg);
-}
-
-.flashcard.flipped:hover .flashcard-inner {
-    transform: rotateY(185deg);
-}
-</style>
-
-<script>
-$(document).ready(function() {
-    // Initialize the carousel
-    $('#flashcardCarousel').carousel();
-    
-    // Prevent carousel from interfering with flashcard clicks
-    $(document).on('click', '.flashcard', function(e) {
-        e.stopPropagation(); // Stop the click from bubbling up to carousel
-        $(this).toggleClass('flipped');
-    });
-    
-    // Also prevent clicks on flashcard content from triggering carousel
-    $(document).on('click', '.flashcard-container', function(e) {
-        e.stopPropagation();
-    });
-    
-    $('#flashcardCarousel').on('slid.bs.carousel', function(e) {
-        // Get the active slide index (0-based) and add 1
-        var activeIndex = $('#flashcardCarousel .carousel-item.active').index() + 1;
-        $('.current-card').text(activeIndex);
-        $('.flashcard').removeClass('flipped');
-    });
-    
-    // Initialize counter - count the actual carousel items
-    setTimeout(function() {
-        var totalCards = $('#flashcardCarousel .carousel-item').length;
-        $('.total-cards').text(totalCards);
-        $('.current-card').text('1'); // Start at 1
-    }, 100);
-});
-<\/script>`;
+</style>`;
 };
 
             const generateCode = () => {
