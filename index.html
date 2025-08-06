@@ -1301,13 +1301,13 @@ const generateFlashcardCSS = () => {
 }
 
 .flashcard-front {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
     color: white;
 }
 
 .flashcard-back {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    color: white;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: black;
     transform: rotateY(180deg);
 }
 
@@ -1438,19 +1438,29 @@ $(document).ready(function() {
     // Initialize the carousel
     $('#flashcardCarousel').carousel();
     
-    $(document).on('click', '.flashcard', function() {
+    // Prevent carousel from interfering with flashcard clicks
+    $(document).on('click', '.flashcard', function(e) {
+        e.stopPropagation(); // Stop the click from bubbling up to carousel
         $(this).toggleClass('flipped');
     });
     
+    // Also prevent clicks on flashcard content from triggering carousel
+    $(document).on('click', '.flashcard-container', function(e) {
+        e.stopPropagation();
+    });
+    
     $('#flashcardCarousel').on('slid.bs.carousel', function(e) {
-        var activeIndex = $(e.relatedTarget).index() + 1;
+        // Get the active slide index (0-based) and add 1
+        var activeIndex = $('#flashcardCarousel .carousel-item.active').index() + 1;
         $('.current-card').text(activeIndex);
         $('.flashcard').removeClass('flipped');
     });
     
-    // Initialize counter
+    // Initialize counter - count the actual carousel items
     setTimeout(function() {
-        $('.total-cards').text($('#flashcardCarousel .carousel-item').length);
+        var totalCards = $('#flashcardCarousel .carousel-item').length;
+        $('.total-cards').text(totalCards);
+        $('.current-card').text('1'); // Start at 1
     }, 100);
 });
 <\/script>`;
