@@ -1136,6 +1136,296 @@
 </style>`;
             };
 
+// Generate flashcard code
+const generateFlashcardCode = () => {
+    let flashcardItems = "";
+
+    items.forEach((item, index) => {
+        const isActive = index === 0 ? "active" : "";
+        const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
+
+        flashcardItems += `
+<div class="carousel-item ${isActive}">
+    <div class="flashcard-container">
+        <div class="flashcard">
+            <div class="flashcard-inner">
+                <div class="flashcard-front">
+                    ${hasImage ? `<div class="flashcard-image-container">
+                        <img src="${item.imageUrl}" alt="${item.title || 'Flashcard'}">
+                    </div>` : ''}
+                    <div class="flashcard-content">
+                        <h4>${item.title || `Flashcard ${index + 1}`}</h4>
+                        <p class="flashcard-hint">Click to reveal answer</p>
+                    </div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="flashcard-content">
+                        <h4>Answer</h4>
+                        <p>${item.description || 'Add your answer here.'}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>`;
+    });
+
+    return `<div class="flashcard-carousel">
+    <div class="carousel slide" id="flashcardCarousel" data-interval="false" aria-live="polite">
+        <div class="carousel-inner">
+            ${flashcardItems}
+        </div>
+        <div class="flashcard-controls">
+            <a class="carousel-control-prev" href="#flashcardCarousel" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#flashcardCarousel" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+        <div class="flashcard-counter">
+            <span class="current-card">1</span> / <span class="total-cards">${items.length}</span>
+        </div>
+    </div>
+</div>`;
+};
+
+// Generate flashcard preview code
+const generateFlashcardPreviewCode = () => {
+    let flashcardItems = "";
+
+    items.forEach((item, index) => {
+        const isActive = index === 0 ? "active" : "";
+        const hasImage = item.imageUrl && item.imageUrl.trim() !== "";
+        const fullImageUrl = getFullImageUrl(item.imageUrl);
+
+        flashcardItems += `
+<div class="carousel-item ${isActive}">
+    <div class="flashcard-container">
+        <div class="flashcard">
+            <div class="flashcard-inner">
+                <div class="flashcard-front">
+                    ${hasImage ? `<div class="flashcard-image-container">
+                        <img src="${fullImageUrl}" alt="${item.title || 'Flashcard'}">
+                    </div>` : ''}
+                    <div class="flashcard-content">
+                        <h4>${item.title || `Flashcard ${index + 1}`}</h4>
+                        <p class="flashcard-hint">Click to reveal answer</p>
+                    </div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="flashcard-content">
+                        <h4>Answer</h4>
+                        <p>${item.description || 'Add your answer here.'}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>`;
+    });
+
+    return `<div class="flashcard-carousel">
+    <div class="carousel slide" id="flashcardCarousel" data-interval="false" aria-live="polite">
+        <div class="carousel-inner">
+            ${flashcardItems}
+        </div>
+        <div class="flashcard-controls">
+            <a class="carousel-control-prev" href="#flashcardCarousel" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#flashcardCarousel" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+        <div class="flashcard-counter">
+            <span class="current-card">1</span> / <span class="total-cards">${items.length}</span>
+        </div>
+    </div>
+</div>`;
+};
+
+// Generate flashcard CSS
+const generateFlashcardCSS = () => {
+    return `<style>
+/* Flashcard Custom Styles */
+.flashcard-carousel {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.flashcard-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 20px;
+}
+
+.flashcard {
+    width: 100%;
+    max-width: 400px;
+    height: 350px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+
+.flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.flashcard-front {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.flashcard-back {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    transform: rotateY(180deg);
+}
+
+.flashcard-image-container {
+    flex: 1;
+    overflow: hidden;
+}
+
+.flashcard-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.flashcard-content {
+    padding: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.flashcard-front .flashcard-content {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.flashcard-content h4 {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: white !important;
+}
+
+.flashcard-hint {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+.flashcard-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    position: relative;
+}
+
+.flashcard-carousel .carousel-control-prev,
+.flashcard-carousel .carousel-control-next {
+    position: static;
+    width: 50px;
+    height: 50px;
+    background: #007bff;
+    border-radius: 50%;
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+.flashcard-carousel .carousel-control-prev:hover,
+.flashcard-carousel .carousel-control-next:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+.flashcard-counter {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+#flashcardCarousel .carousel-item {
+    transition: transform 0.6s ease-in-out;
+}
+
+@media (max-width: 768px) {
+    .flashcard-carousel {
+        max-width: 100%;
+        padding: 10px;
+    }
+    
+    .flashcard {
+        max-width: 350px;
+        height: 300px;
+    }
+    
+    .flashcard-content {
+        padding: 15px;
+    }
+}
+
+.flashcard:hover .flashcard-inner {
+    transform: rotateY(5deg);
+}
+
+.flashcard.flipped:hover .flashcard-inner {
+    transform: rotateY(185deg);
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    $(document).on('click', '.flashcard', function() {
+        $(this).toggleClass('flipped');
+    });
+    
+    $('#flashcardCarousel').on('slid.bs.carousel', function(e) {
+        var activeIndex = $(e.relatedTarget).index() + 1;
+        $('.current-card').text(activeIndex);
+        $('.flashcard').removeClass('flipped');
+    });
+    
+    $('.total-cards').text($('#flashcardCarousel .carousel-item').length);
+});
+<\/script>`;
+};
+
             const generateCode = () => {
                 let code = "";
                 let css = "";
@@ -1165,6 +1455,11 @@
                         css = generateCarouselCSS();
                         code = generateCarouselCode();
                         previewCode = generateCarouselPreviewCode();
+                        break;
+                    case "flashcard":
+                        css = generateFlashcardCSS();
+                        code = generateFlashcardCode();
+                        previewCode = generateFlashcardPreviewCode();
                         break;
                     default:
                         code = "Select an element type";
@@ -1206,6 +1501,10 @@
                     case "carousel":
                         css = generateCarouselCSS();
                         code = generateCarouselCode();
+                        break;
+                    case "flashcard":
+                        css = generateFlashcardCSS();
+                        code = generateFlashcardCode();
                         break;
                     default:
                         code = "Select an element type";
@@ -1268,49 +1567,59 @@
 
             // Render additional fields based on element type
             const renderElementSpecificFields = (item) => {
-                if (selectedElement === "carousel" || selectedElement === "flipCard") {
-                    return React.createElement("div", { className: "form-group" }, [
-                        React.createElement("div", { className: "form-check mb-3", key: "checkbox" }, [
-                            React.createElement("input", {
-                                type: "checkbox",
-                                className: "form-check-input",
-                                id: `useVideo-${item.id}`,
-                                checked: item.useVideo || false,
-                                onChange: (e) =>
-                                    handleCheckboxChange(item.id, "useVideo", e.target.checked),
-                                key: "input"
-                            }),
-                            React.createElement("label", {
-                                className: "form-check-label",
-                                htmlFor: `useVideo-${item.id}`,
-                                key: "label"
-                            }, "Use video instead of image")
-                        ]),
+    if (selectedElement === "carousel" || selectedElement === "flipCard") {
+        return React.createElement("div", { className: "form-group" }, [
+            React.createElement("div", { className: "form-check mb-3", key: "checkbox" }, [
+                React.createElement("input", {
+                    type: "checkbox",
+                    className: "form-check-input",
+                    id: `useVideo-${item.id}`,
+                    checked: item.useVideo || false,
+                    onChange: (e) =>
+                        handleCheckboxChange(item.id, "useVideo", e.target.checked),
+                    key: "input"
+                }),
+                React.createElement("label", {
+                    className: "form-check-label",
+                    htmlFor: `useVideo-${item.id}`,
+                    key: "label"
+                }, "Use video instead of image")
+            ]),
 
-                        item.useVideo && React.createElement("div", { className: "form-group", key: "video-group" }, [
-                            React.createElement("label", {
-                                htmlFor: `videoUrl-${item.id}`,
-                                key: "video-label"
-                            }, "Video URL:"),
-                            React.createElement("small", {
-                                className: "form-text text-muted d-block mb-2",
-                                key: "video-help"
-                            }, "Add your MP4 video to Brightspace and paste the URL here"),
-                            React.createElement("input", {
-                                type: "text",
-                                id: `videoUrl-${item.id}`,
-                                className: "form-control",
-                                value: item.videoUrl || "",
-                                onChange: (e) =>
-                                    handleChange(item.id, "videoUrl", e.target.value),
-                                placeholder: "Enter video URL (.mp4)",
-                                key: "video-input"
-                            })
-                        ])
-                    ]);
-                }
-                return null;
-            };
+            item.useVideo && React.createElement("div", { className: "form-group", key: "video-group" }, [
+                React.createElement("label", {
+                    htmlFor: `videoUrl-${item.id}`,
+                    key: "video-label"
+                }, "Video URL:"),
+                React.createElement("small", {
+                    className: "form-text text-muted d-block mb-2",
+                    key: "video-help"
+                }, "Add your MP4 video to Brightspace and paste the URL here"),
+                React.createElement("input", {
+                    type: "text",
+                    id: `videoUrl-${item.id}`,
+                    className: "form-control",
+                    value: item.videoUrl || "",
+                    onChange: (e) =>
+                        handleChange(item.id, "videoUrl", e.target.value),
+                    placeholder: "Enter video URL (.mp4)",
+                    key: "video-input"
+                })
+            ])
+        ]);
+    }
+    
+    if (selectedElement === "flashcard") {
+        return React.createElement("div", { className: "form-group" }, [
+            React.createElement("small", {
+                className: "form-text text-muted d-block mb-2",
+                key: "flashcard-help"
+            }, "For flashcards: Title = Question/Word, Description = Answer, Image = Visual aid for the question")
+        ]);
+    }
+    
+    return null;
+};
 
             return React.createElement("div", { className: "container mt-4" }, [
                 React.createElement("h1", { className: "mb-4", key: "title" }, "Bootstrap Element Generator"),
@@ -1331,7 +1640,8 @@
                         React.createElement("option", { value: "flipCard", key: "flip" }, "Flip Card"),
                         React.createElement("option", { value: "regularCard", key: "reg" }, "Regular Card"),
                         React.createElement("option", { value: "tabs", key: "tabs" }, "Tabs"),
-                        React.createElement("option", { value: "carousel", key: "car" }, "Carousel")
+                        React.createElement("option", { value: "carousel", key: "car" }, "Carousel"),
+                        React.createElement("option", { value: "flashcard", key: "flash" }, "Flashcard")
                     ])
                 ]),
 
@@ -1376,32 +1686,32 @@
                         renderElementSpecificFields(item),
                         
                         React.createElement("div", { className: "form-group", key: "title-group" }, [
-                            React.createElement("label", {
-                                htmlFor: `title-${item.id}`,
-                                key: "title-label"
-                            }, "Title:"),
+                        React.createElement("label", {
+                            htmlFor: `title-${item.id}`,
+                            key: "title-label"
+                        }, selectedElement === "flashcard" ? "Question/Word:" : "Title:"),
                             React.createElement("input", {
                                 type: "text",
                                 id: `title-${item.id}`,
                                 className: "form-control",
                                 value: item.title,
                                 onChange: (e) => handleChange(item.id, "title", e.target.value),
-                                placeholder: "Enter title",
+                                placeholder: selectedElement === "flashcard" ? "Enter your question or word" : "Enter title",
                                 key: "title-input"
                             })
                         ]),
                         React.createElement("div", { className: "form-group", key: "desc-group" }, [
-                            React.createElement("label", {
-                                htmlFor: `description-${item.id}`,
-                                key: "desc-label"
-                            }, "Description:"),
+                        React.createElement("label", {
+                            htmlFor: `description-${item.id}`,
+                            key: "desc-label"
+                        }, selectedElement === "flashcard" ? "Answer:" : "Description:"),
                             React.createElement("textarea", {
                                 id: `description-${item.id}`,
                                 className: "form-control",
                                 value: item.description,
                                 onChange: (e) =>
                                     handleChange(item.id, "description", e.target.value),
-                                placeholder: "Enter description",
+                                placeholder: selectedElement === "flashcard" ? "Enter the answer" : "Enter description",
                                 rows: "3",
                                 key: "desc-input"
                             })
